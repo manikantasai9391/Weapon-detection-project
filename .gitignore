@@ -1,5 +1,3 @@
-# Created by venv; see https://docs.python.org/3/library/venv.html
-*
 # Model weights (downloaded at runtime from Hugging Face)
 model/*.pt
 
@@ -13,7 +11,7 @@ venv/
 __pycache__/
 *.pyc
 
-# Uploaded/result files (optional — depends if you want to keep test uploads out of git)
+# Uploaded/result files
 static/uploads/*
 static/results/*
 !static/uploads/.gitkeep
