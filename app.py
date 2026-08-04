@@ -21,7 +21,20 @@ RESULT_FOLDER = "static/results"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULT_FOLDER, exist_ok=True)
 
-model = YOLO("model/yolo_v8m_best(65).pt")
+import os
+import urllib.request
+from ultralytics import YOLO
+
+MODEL_PATH = "model/yolo_v8m_best(65).pt"
+MODEL_URL = os.getenv("MODEL_URL")
+
+if not os.path.exists(MODEL_PATH):
+    os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+    print("Downloading model weights from Hugging Face...")
+    urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
+    print("Model downloaded successfully.")
+
+model = YOLO(MODEL_PATH)
 
 EMAIL_SENDER    = "your_gmail@gmail.com"
 EMAIL_PASSWORD  = "your_app_password_here"
