@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WeaponDetection — Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+<div id="alertContainer"></div>
+
+<div id="soundBanner" style="display:none;">
+  <div class="sound-banner">
+    <span>🔔 Enable sound alerts for weapon detection?</span>
+    <button onclick="enableSound()" class="sound-yes-btn">🔊 Yes, Enable Sound</button>
+    <button onclick="dismissSoundBanner()" class="sound-no-btn">✕ No Thanks</button>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text"> WEAPON DETECTING...</div>
+</div>
+
+<nav class="topbar">
+  <a class="topbar-logo" href="/dashboard">WEAPON<span>DETECTION</span></a>
+  <div class="topbar-nav">
+    <a href="/dashboard" class="nav-link active">Detect</a>
+    <a href="/logs" class="nav-link">Logs</a>
+    <a href="/about" class="nav-link">ℹ About</a>
+  </div>
+  <div class="topbar-user">
+    <div class="user-badge">{{ user[0].upper() }}</div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;line-height:1.2;">
+      <span>{{ user }}</span>
+      <span style="font-size:0.7rem;color:var(--muted);letter-spacing:0.5px;">{{ email }}</span>
+    </div>
+    <a href="/logout" class="logout-btn">Logout</a>
+  </div>
+</nav>
+
+<div class="page-content">
+  <div class="page-header">
+    <div class="status-dot"></div>
+    <h1>DETECTION CONSOLE</h1>
+    <span style="margin-left:auto;font-size:0.75rem;color:var(--muted);letter-spacing:1px;">
+      📧 Alerts → <strong style="color:var(--accent);">{{ email }}</strong>
+    </span>
+  </div>
+
+  {% if error %}
+  <div class="alert-error" style="margin-bottom:20px;">{{ error }}</div>
+  {% endif %}
+
+  <div class="dashboard-grid">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-icon">📹</span>
+        <h3>Live Camera Feed</h3>
+        <div style="margin-left:auto;display:flex;gap:8px;">
+          <button class="cam-btn" id="startBtn" onclick="startCamera()">▶ Start</button>
+          <button class="cam-btn cam-btn-stop" id="stopBtn" onclick="stopCamera()" disabled>⏹ Stop</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="live-grid">
+          <div>
+            <div class="video-label">📷 Your Camera</div>
+            <div class="camera-feed">
+              <div class="camera-overlay" id="recBadge" style="display:none;">
+                <div class="rec-dot"></div> LIVE
+              </div>
+              <video id="localVideo" autoplay muted playsinline></video>
+              <div class="cam-placeholder" id="camPlaceholder">
+                <div style="font-size:2.5rem;">📷</div>
+                <div style="font-size:0.8rem;color:#aaa;margin-top:8px;letter-spacing:1px;">
+                  Click ▶ Start to enable camera
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="video-label">🔍 AI Detection</div>
+            <div class="camera-feed">
+              <div class="camera-overlay" id="aiBadge" style="display:none;">
+                <div class="rec-dot" style="background:var(--accent);box-shadow:0 0 8px var(--accent);"></div> AI
+              </div>
+              <canvas id="detectedCanvas"></canvas>
+              <div class="cam-placeholder" id="aiPlaceholder">
+                <div style="font-size:0.8rem;color:#aaa;margin-top:8px;letter-spacing:1px;">
+                  Waiting for camera...
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="liveDetections" style="margin-top:16px;min-height:36px;"></div>
+        <canvas id="captureCanvas" style="display:none;"></canvas>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h3>Upload & Detect</h3>
+      </div>
+      <div class="panel-body">
+        <form action="/detect_file" method="POST" enctype="multipart/form-data" id="detectForm">
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">📂</div>
+            <div class="upload-text">Click or drag to upload<br><strong>Image or Video</strong></div>
+            <div class="file-chosen" id="fileChosen">No file selected</div>
+          </div>
+          <input type="file" name="file" id="fileInput" class="file-input-hidden"
+                 accept="image/*,video/*" onchange="onFileChange(this)">
+          <button type="submit" class="btn-detect" id="detectBtn"
+                  onclick="document.getElementById('loadingOverlay').classList.add('active')">
+            🔍 SCAN FOR WEAPON
+          </button>
+        </form>
+
+        {% if file_type == "image" %}
+        <div class="result-section">
+          <h4>📸 Detection Result</h4>
+          <div class="image-result-grid">
+            <div>
+              <div class="video-label">Original Image</div>
+              <img src="{{ url_for('static', filename=original_image) }}" alt="Original">
+            </div>
+            <div>
+              <div class="video-label">Detected Objects</div>
+              <img src="{{ url_for('static', filename=image) }}" alt="Detected">
+            </div>
+          </div>
+          {% if detections %}
+          <div style="margin-top:16px;">
+            <h4>🚨 Threats Detected</h4>
+            <div class="detection-tags">
+              {% for d in detections %}
+              <div class="detection-tag">⚠️ {{ d.label }} — {{ d.confidence }}%</div>
+              {% endfor %}
+            </div>
+          </div>
+          {% else %}
+          <div class="no-detection" style="margin-top:14px;">✅ No threats detected</div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if file_type == "video" %}
+        <div class="result-section">
+          <h4>🎬 Video Analysis</h4>
+          <div class="video-result-grid">
+            <div>
+              <div class="video-label">📽️ Original Video</div>
+              <video controls>
+                <source src="{{ url_for('static', filename=original_video) }}">
+              </video>
+            </div>
+            <div>
+              <div class="video-label">🔍 Detected Video</div>
+              <video controls>
+                <source src="{{ url_for('static', filename=result_video) }}">
+              </video>
+            </div>
+          </div>
+          {% if detections %}
+          <div style="margin-top:16px;">
+            <h4>🚨 Objects Found</h4>
+            <div class="detection-tags">
+              {% for d in detections %}
+              <div class="detection-tag">⚠️ {{ d.label }} ({{ d.count }} frames)</div>
+              {% endfor %}
+            </div>
+          </div>
+          {% else %}
+          <div class="no-detection" style="margin-top:14px;">✅ No threats detected</div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let audioCtx      = null;
+let soundEnabled  = false;
+let soundAsked    = false;
+
+function buildAlarmSound(ctx) {
+  const duration   = 0.18;
+  const repeats    = 3;
+  const gainNode   = ctx.createGain();
+  gainNode.gain.setValueAtTime(0.0, ctx.currentTime);
+  gainNode.connect(ctx.destination);
+
+  const tones = [880, 660];
+  let t = ctx.currentTime + 0.05;
+
+  for (let r = 0; r < repeats; r++) {
+    tones.forEach(freq => {
+      const osc = ctx.createOscillator();
+      osc.type      = "square";
+      osc.frequency.setValueAtTime(freq, t);
+
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0, t);
+      g.gain.linearRampToValueAtTime(0.35, t + 0.01);
+      g.gain.setValueAtTime(0.35, t + duration - 0.02);
+      g.gain.linearRampToValueAtTime(0.0, t + duration);
+
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + duration);
+      t += duration;
+    });
+    t += 0.06;
+  }
+}
+
+function playAlarmSound() {
+  if (!soundEnabled) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    buildAlarmSound(audioCtx);
+  } catch(e) {
+    console.warn("[Sound] Could not play alarm:", e);
+  }
+}
+
+function initAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  soundEnabled = true;
+  soundAsked   = true;
+  document.getElementById("soundBanner").style.display = "none";
+  console.log("[Sound] ✅ Audio enabled");
+}
+
+function enableSound() {
+  initAudioContext();
+  const ctx = audioCtx;
+  const osc = ctx.createOscillator();
+  const g   = ctx.createGain();
+  osc.frequency.setValueAtTime(880, ctx.currentTime);
+  g.gain.setValueAtTime(0.15, ctx.currentTime);
+  g.gain.linearRampToValueAtTime(0.0, ctx.currentTime + 0.25);
+  osc.connect(g); g.connect(ctx.destination);
+  osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.25);
+  showAlert("🔊 Sound alerts enabled! You'll hear an alarm when a weapon is detected.", "info", 3000);
+}
+
+function dismissSoundBanner() {
+  soundEnabled = false;
+  soundAsked   = true;
+  document.getElementById("soundBanner").style.display = "none";
+}
+
+// Show the sound permission banner the first time the page loads
+window.addEventListener("load", () => {
+  if (!soundAsked) {
+    setTimeout(() => {
+      document.getElementById("soundBanner").style.display = "block";
+    }, 1200);
+  }
+});
+
+function showAlert(message, type = "warning", duration = 6000) {
+  const container = document.getElementById("alertContainer");
+  const colors = {
+    success: { bg: "#f0fdf4", border: "#22c55e", icon: "✅", title: "SUCCESS",      text: "#166534" },
+    danger:  { bg: "#fff1f2", border: "#ef4444", icon: "🚨", title: "THREAT ALERT", text: "#991b1b" },
+    warning: { bg: "#fffbeb", border: "#f59e0b", icon: "⚠️", title: "WARNING",      text: "#92400e" },
+    info:    { bg: "#eff6ff", border: "#3b82f6", icon: "ℹ️",  title: "INFO",         text: "#1e40af" }
+  };
+  const c = colors[type] || colors.warning;
+  const popup = document.createElement("div");
+  popup.className = "alert-popup";
+  popup.style.cssText = `background:${c.bg};border:1px solid ${c.border};border-left:5px solid ${c.border};`;
+
+  const emailNote = (type === "danger" || type === "success")
+    ? '<div class="alert-email-note">📧 Email sent</div>'
+    : '';
+
+  popup.innerHTML = `
+    <div class="alert-popup-header">
+      <span class="alert-popup-icon">${c.icon}</span>
+      <span class="alert-popup-title" style="color:${c.text}">${c.title}</span>
+      ${emailNote}
+      <button class="alert-popup-close" onclick="dismissAlert(this.closest('.alert-popup'))">✕</button>
+    </div>
+    <div class="alert-popup-message" style="color:${c.text}">${message}</div>
+    <div class="alert-popup-progress">
+      <div class="alert-popup-bar" style="background:${c.border};animation-duration:${duration}ms"></div>
+    </div>`;
+  container.appendChild(popup);
+  requestAnimationFrame(() => popup.classList.add("alert-popup-show"));
+  setTimeout(() => dismissAlert(popup), duration);
+}
+
+function dismissAlert(popup) {
+  if (!popup || popup.classList.contains("alert-popup-hiding")) return;
+  popup.classList.add("alert-popup-hiding");
+  setTimeout(() => popup.remove(), 400);
+}
+async function pollAlerts() {
+  try {
+    const res = await fetch("/get_alerts");
+    if (!res.ok) return;
+    const alerts = await res.json();
+    alerts.forEach(a => {
+      showAlert(a.message, a.type);
+      if (a.play_sound) {
+        playAlarmSound();
+      }
+    });
+  } catch(e) {}
+}
+
+setInterval(pollAlerts, 2000);
+window.addEventListener("load", () => setTimeout(pollAlerts, 600));
+
+const PAGE_PLAY_SOUND = "{{ play_sound | default('false') }}";
+window.addEventListener("load", () => {
+  if (PAGE_PLAY_SOUND === "true") {
+    setTimeout(() => {
+      if (soundEnabled) {
+        playAlarmSound();
+      } else {
+        document.getElementById("soundBanner").style.display = "block";
+        window._pendingSoundOnEnable = true;
+      }
+    }, 800);
+  }
+});
+
+const _origEnableSound = enableSound;
+enableSound = function() {
+  _origEnableSound();
+  if (window._pendingSoundOnEnable) {
+    window._pendingSoundOnEnable = false;
+    setTimeout(playAlarmSound, 300);
+  }
+};
+
+let stream = null, processingLoop = null, isProcessing = false;
+
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 640, height: 480, facingMode: "user" }, audio: false
+    });
+    const video = document.getElementById("localVideo");
+    video.srcObject = stream;
+    video.style.display = "block";
+    document.getElementById("camPlaceholder").style.display = "none";
+    document.getElementById("aiPlaceholder").style.display  = "none";
+    document.getElementById("recBadge").style.display = "flex";
+    document.getElementById("aiBadge").style.display  = "flex";
+    document.getElementById("startBtn").disabled = true;
+    document.getElementById("stopBtn").disabled  = false;
+    processingLoop = setInterval(sendFrame, 300);
+  } catch(err) {
+    showAlert("Camera access denied. Please allow camera permissions.", "danger", 6000);
+  }
+}
+
+function stopCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  if (processingLoop) { clearInterval(processingLoop); processingLoop = null; }
+  const video = document.getElementById("localVideo");
+  video.srcObject = null; video.style.display = "none";
+  const canvas = document.getElementById("detectedCanvas");
+  canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+  document.getElementById("camPlaceholder").style.display = "flex";
+  document.getElementById("aiPlaceholder").style.display  = "flex";
+  document.getElementById("recBadge").style.display = "none";
+  document.getElementById("aiBadge").style.display  = "none";
+  document.getElementById("startBtn").disabled = false;
+  document.getElementById("stopBtn").disabled  = true;
+  document.getElementById("liveDetections").innerHTML = "";
+  showAlert("📷 Camera stopped.", "info", 3000);
+}
+
+let lastSoundTime = 0;
+
+async function sendFrame() {
+  if (isProcessing) return;
+  const video = document.getElementById("localVideo");
+  if (!video.srcObject || video.readyState < 2) return;
+  isProcessing = true;
+  const capture = document.getElementById("captureCanvas");
+  capture.width  = video.videoWidth  || 640;
+  capture.height = video.videoHeight || 480;
+  capture.getContext("2d").drawImage(video, 0, 0, capture.width, capture.height);
+  try {
+    const res  = await fetch("/process_frame", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ frame: capture.toDataURL("image/jpeg", 0.7) })
+    });
+    if (!res.ok) { isProcessing = false; return; }
+    const data = await res.json();
+
+    if (data.processed_frame) {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.getElementById("detectedCanvas");
+        c.width = img.width; c.height = img.height;
+        c.getContext("2d").drawImage(img, 0, 0);
+      };
+      img.src = data.processed_frame;
+    }
+
+    const liveDiv = document.getElementById("liveDetections");
+    if (data.detections && data.detections.length > 0) {
+      liveDiv.innerHTML =
+        '<div style="font-family:Orbitron,monospace;font-size:0.65rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">🚨 Live Detections</div>' +
+        '<div class="detection-tags">' +
+        data.detections.map(d => `<div class="detection-tag">⚠️ ${d.label} — ${d.confidence}%</div>`).join("") +
+        '</div>';
+
+      if (data.play_sound) {
+        const now = Date.now();
+        if (now - lastSoundTime > 8000) {
+          lastSoundTime = now;
+          playAlarmSound();
+        }
+      }
+
+    } else {
+      liveDiv.innerHTML = '<div class="no-detection">✅ No threats detected</div>';
+    }
+  } catch(e) { console.warn(e); }
+  isProcessing = false;
+}
+function onFileChange(input) {
+  const name = input.files[0]?.name || "No file selected";
+  document.getElementById("fileChosen").textContent = "📎 " + name;
+  document.getElementById("detectBtn").classList.add("visible");
+}
+const zone = document.getElementById("uploadZone");
+zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("dragover"); });
+zone.addEventListener("dragleave", () => zone.classList.remove("dragover"));
+zone.addEventListener("drop", e => {
+  e.preventDefault(); zone.classList.remove("dragover");
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    const dt = new DataTransfer(); dt.items.add(file);
+    document.getElementById("fileInput").files = dt.files;
+    onFileChange(document.getElementById("fileInput"));
+  }
+});
+</script>
+</body>
+</html>

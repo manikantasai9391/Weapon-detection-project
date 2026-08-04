@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Weapon Detection — About</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+<nav class="topbar">
+  <a class="topbar-logo" href="/dashboard">WEAPON<span>DETECTION</span></a>
+  <div class="topbar-nav">
+    <a href="/dashboard" class="nav-link">Detect</a>
+    <a href="/logs" class="nav-link">Logs</a>
+    <a href="/about" class="nav-link active">ℹ About</a>
+  </div>
+  <div class="topbar-user">
+    <div class="user-badge">{{ user[0].upper() }}</div>
+    {{ user }}
+    <a href="/logout" class="logout-btn">Logout</a>
+  </div>
+</nav>
+
+<div class="page-content">
+  <div class="page-header">
+    <div class="status-dot"></div>
+    <h1>ABOUT THE SYSTEM</h1>
+  </div>
+
+  <div class="about-grid">
+    <div class="stat-card">
+      <div class="stat-label"> Model</div>
+      <div class="stat-value">YOLOv8M</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Detection Mode</div>
+      <div class="stat-value">REAL-TIME</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Status</div>
+      <div class="stat-value" style="color:var(--accent3)">ONLINE</div>
+    </div>
+  </div>
+
+  <div class="about-desc">
+    <h2>🛡️ WEAPON DETECTION  — SYSTEM OVERVIEW</h2>
+    <p>WeaponDetection is an advanced security platform powered by a custom-trained YOLOv8M deep learning model. It is designed to detect weapons — including knives, guns — in real-time from live camera feeds, uploaded images, and video files.</p>
+    <br>
+    <p>The system uses computer vision techniques to identify threats at speed, making it suitable for surveillance, security screening, and public safety applications.</p>
+    <br>
+    <p><strong style="color:var(--accent)">Capabilities:</strong> Live CCTV monitoring · Image threat scanning · Video file analysis · Multi-user access control · Detection history logging</p>
+  </div>
+</div>
+</body>
+</html>

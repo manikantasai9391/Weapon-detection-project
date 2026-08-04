@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Weapon Detection — Detection Logs</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+<nav class="topbar">
+  <a class="topbar-logo" href="/dashboard">WEAPON<span>DETECTION</span></a>
+  <div class="topbar-nav">
+    <a href="/dashboard" class="nav-link"> Detect</a>
+    <a href="/logs" class="nav-link active"> Logs</a>
+    <a href="/about" class="nav-link">ℹ About</a>
+  </div>
+  <div class="topbar-user">
+    <div class="user-badge">{{ user[0].upper() }}</div>
+    {{ user }}
+    <a href="/logout" class="logout-btn">Logout</a>
+  </div>
+</nav>
+
+<div class="page-content">
+  <div class="page-header">
+    <div class="status-dot"></div>
+    <h1>DETECTION LOGS</h1>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-icon">📋</span>
+      <h3>Session Activity</h3>
+    </div>
+    <div class="panel-body" style="padding:0;">
+      {% if logs %}
+      <table class="log-table">
+        <thead>
+          <tr>
+            <th>🕐 Time</th>
+            <th>👤 User</th>
+            <th>📁 File</th>
+            <th>Type</th>
+            <th>🚨 Detections</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td>{{ log.time }}</td>
+            <td>{{ log.user }}</td>
+            <td>{{ log.file }}</td>
+            <td><span class="badge badge-{{ log.type }}">{{ log.type }}</span></td>
+            <td>
+              {% if log.detections %}
+                {% for d in log.detections %}
+                  <span class="detection-tag" style="display:inline-flex;margin:2px;">⚠️ {{ d.label }}</span>
+                {% endfor %}
+              {% else %}
+                <span style="color:var(--accent3)">✅ Clear</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-logs">📭 No detections logged in this session yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+</body>
+</html>

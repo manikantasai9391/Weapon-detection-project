@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WeaponDetection AI — Login</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-icon">🛡️</div>
+    <div class="auth-title">WeaponDetection</div>
+    <div class="auth-sub">SIGN IN WITH YOUR EMAIL</div>
+
+    {% if error %}
+    <div class="alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+      <div class="input-group">
+        <label>📧 Email Address</label>
+        <input type="email" name="email" placeholder="you@example.com" required autocomplete="off">
+      </div>
+      <div class="input-group">
+        <label>🔒 Password</label>
+        <input type="password" name="password" placeholder="Enter password" required>
+      </div>
+      <button type="submit" class="btn-primary">🔐 LOGIN</button>
+    </form>
+
+    <!-- DIVIDER -->
+    <div class="divider">
+      <span>OR</span>
+    </div>
+
+    <!-- GUEST LOGIN BUTTON -->
+    <a href="/guest_login" class="btn-guest">
+      👤 CONTINUE AS GUEST
+    </a>
+
+    <div class="auth-links">
+      <a href="/register">➕ Create Account</a>
+      <a href="/forgot">🔑 Forgot Password</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>
