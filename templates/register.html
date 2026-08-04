@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WeaponDetection — Register</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-icon">🆕</div>
+    <div class="auth-title">Create Account</div>
+    <div class="auth-sub">REGISTER WITH YOUR EMAIL</div>
+
+    {% if error %}<div class="alert-error">{{ error }}</div>{% endif %}
+    {% if success %}<div class="alert-success">{{ success }}</div>{% endif %}
+
+    <form method="POST">
+      <div class="input-group">
+        <label>👤 Full Name</label>
+        <input type="text" name="username" placeholder="Your display name" required>
+      </div>
+      <div class="input-group">
+        <label>📧 Email Address</label>
+        <input type="email" name="email" placeholder="you@example.com" required>
+      </div>
+      <div class="input-group">
+        <label>🔒 Password</label>
+        <input type="password" name="password" placeholder="Choose a strong password" required>
+      </div>
+      <button type="submit" class="btn-primary">✅ CREATE ACCOUNT</button>
+    </form>
+
+    <div class="auth-links">
+      <a href="/">← Back to Login</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>
