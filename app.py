@@ -26,7 +26,7 @@ import urllib.request
 from ultralytics import YOLO
 
 MODEL_PATH = "model/yolo_v8m_best(65).pt"
-MODEL_URL = os.getenv("MODEL_URL") or https://huggingface.co/Sai9391/Weapon-detection-yolov8m/blob/main/model/yolo_v8m_best(65).pt
+MODEL_URL = os.getenv("MODEL_URL") or https://huggingface.co/Sai9391/Weapon-detection-yolov8m/resolve/main/model/yolo_v8m_best(65).pt
 
 if not os.path.exists(MODEL_PATH):
     os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
